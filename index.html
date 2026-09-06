@@ -2,11 +2,75 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Male Reproductive System — 3D Viewer</title>
-<meta http-equiv="refresh" content="0; url=Male%20Reproductive%20System%20Viewer.html">
-<link rel="canonical" href="Male%20Reproductive%20System%20Viewer.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Anatomy Viewers</title>
+<style>
+  :root {
+    --bg: #14161b;
+    --panel-bg: rgba(233, 230, 223, 0.04);
+    --ink: #e9e6df;
+    --ink-muted: #9a9990;
+    --accent: #6fb8b0;
+    --border: rgba(233, 230, 223, 0.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    padding: 48px 20px;
+  }
+  main { max-width: 620px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 6px; }
+  .sub { color: var(--ink-muted); font-size: 14px; margin: 0 0 32px; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { margin-bottom: 14px; }
+  a.card {
+    display: block;
+    padding: 18px 20px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--ink);
+    text-decoration: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  a.card:hover, a.card:focus-visible {
+    border-color: var(--accent);
+    background: rgba(111, 184, 176, 0.08);
+  }
+  .name { font-size: 16px; font-weight: 600; color: var(--accent); }
+  .desc { font-size: 13px; color: var(--ink-muted); margin-top: 3px; }
+  footer { margin-top: 36px; font-size: 12px; color: var(--ink-muted); }
+  footer a { color: var(--accent); }
+</style>
 </head>
 <body>
-<p><a href="Male%20Reproductive%20System%20Viewer.html">Open the Male Reproductive System 3D Viewer</a></p>
+<main>
+  <h1>3D Anatomy Viewers</h1>
+  <p class="sub">Interactive anatomical models that run in the browser.</p>
+
+  <ul>
+    <li>
+      <a class="card" href="Male%20Reproductive%20System%20Viewer.html">
+        <span class="name">Male Reproductive System</span>
+        <div class="desc">Rotate, zoom, and click individual structures to see their names and descriptions.</div>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="Vagina%20Cutaway%20Viewer.html">
+        <span class="name">Vagina, Cutaway View</span>
+        <div class="desc">Cutaway model showing internal structure, embedded from Sketchfab.</div>
+      </a>
+    </li>
+  </ul>
+
+  <footer>
+    Source on <a href="https://github.com/rossdavilla/Male-Anatomy-3D">GitHub</a>. For educational use.
+  </footer>
+</main>
 </body>
 </html>

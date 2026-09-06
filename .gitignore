@@ -3,3 +3,10 @@ Z-Anatomy Files/
 
 # macOS
 .DS_Store
+
+# Local source assets — not referenced by either viewer
+clitoris/
+vagina/
+vagina.glb
+vagina_2.zip
+female_reproductive_organs-x_section.glb
