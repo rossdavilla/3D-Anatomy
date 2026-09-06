@@ -1,0 +1,5 @@
+# Large source assets — not needed to run the viewer
+Z-Anatomy Files/
+
+# macOS
+.DS_Store
