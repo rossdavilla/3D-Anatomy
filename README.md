@@ -2,7 +2,7 @@
 
 Interactive 3D anatomy viewers that run entirely in the browser.
 
-**Live site:** https://rossdavilla.github.io/Male-Anatomy-3D/
+**Live site:** https://rossdavilla.github.io/3D-Anatomy/
 
 ## Viewers
 
