@@ -11,6 +11,7 @@ Interactive 3D anatomy viewers that run entirely in the browser.
 | `Male Reproductive System Viewer.html` | Self-contained three.js viewer — the glTF model is embedded as base64, so the page needs no other local files. Click a structure to see its name and description. |
 | `Brain Neocortex Viewer.html` | Self-contained three.js viewer of the cerebral cortex, split into its four lobes plus the insula, with the cerebellum, brainstem, corpus callosum and pituitary gland alongside. Click a structure or pick one from the legend. |
 | `Brain Limbic System Viewer.html` | The limbic system: 23 named structures inside a transparent cortical shell. Click one, or pick it from the legend, and everything else fades to a ghost. Loads `brain/limbic-system-reduced.glb` at runtime, so it needs a web server. |
+| `Brain Limbic System Simplified Viewer.html` | The same model and the same loader, narrowed to seven structures: hippocampus, amygdala, hypothalamus and pituitary, thalamus, pons, brainstem, cerebellum. The rest of the brain is still drawn but is not listed or clickable. Selecting a structure leaves the brain whole; an eye toggle beside the (i) fades everything else away, and the setting is sticky across selections. |
 | `Female Reproductive System Viewer.html` | Female reproductive and urinary anatomy. The source model carries no per-organ names, so parts are separated into connected components and each was identified by hand. Self-contained: the model is embedded as base64. |
 | `index.html` | Landing page linking to the viewers. |
 
@@ -68,27 +69,29 @@ Pillow. `tools/downscale_glb_textures.py` does the texture step and works on any
 | `MaleSexualAnatomy 2.glb` | Source model embedded into the male reproductive system viewer. Not loaded at runtime. |
 | `brain/neocortex.glb` | Source model for the brain viewer. Read at build time only. |
 | `brain/limbic-system.glb` | Raw source model, 46.6 MB. Excluded from the repository; run `tools/reduce-limbic.sh` on it. |
-| `brain/limbic-system-reduced.glb` | The reduced model, 2.6 MB. Loaded at runtime by the limbic system viewer. |
+| `brain/limbic-system-reduced.glb` | The reduced model, 2.6 MB. Loaded at runtime by both limbic system viewers. |
 
 ## How the viewers load their models
 
-The male reproductive system and neocortex viewers embed their model as base64, so each is a
-single self-contained file you can open straight from disk. The limbic system model is too
-big for that, so that viewer fetches `brain/limbic-system-reduced.glb` over the network and
-needs to be served by a web server — GitHub Pages is fine, and locally:
+The male reproductive system, neocortex and female reproductive system viewers embed their
+model as base64, so each is a single self-contained file you can open straight from disk. The
+limbic system model is too big for that, so both limbic viewers fetch
+`brain/limbic-system-reduced.glb` over the network and need to be served by a web server —
+GitHub Pages is fine, and locally:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-It also uses three.js's own `GLTFLoader` rather than the hand-written reader the other two
-share, because this model interleaves its vertex attributes and carries 38 textures and 13
-transparent materials — none of which the minimal reader handles.
+They also use three.js's own `GLTFLoader` rather than the hand-written reader the embedded
+viewers share, because this model interleaves its vertex attributes and carries 38 textures
+and 13 transparent materials — none of which the minimal reader handles.
 
 ## Running it
 
-Open the male reproductive system, neocortex or female internal anatomy viewer in a modern
-browser, or visit the live site above. The limbic system viewer needs a server, as above.
+Open the male reproductive system, neocortex or female reproductive system viewer in a
+modern browser, or visit the live site above. The two limbic system viewers need a server,
+as above.
 
 The viewers need an internet connection: they all load
 [three.js](https://threejs.org/) r128 from a CDN.
