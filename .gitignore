@@ -10,3 +10,8 @@ vagina/
 vagina.glb
 vagina_2.zip
 female_reproductive_organs-x_section.glb
+
+# Brain source models. neocortex.glb is the input to tools/build_neocortex_viewer.py
+# and is small enough to keep. The raw limbic system export is 46 MB; the reduced
+# copy that tools/reduce-limbic.sh produces is committed instead.
+brain/limbic-system.glb

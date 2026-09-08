@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Limbic System — 3D Viewer</title>
+<style>
+  :root {
+    --bg: #14161b;
+    --panel-bg: rgba(20, 22, 27, 0.82);
+    --ink: #e9e6df;
+    --ink-muted: #9a9990;
+    --accent: #6fb8b0;
+    --border: rgba(233, 230, 223, 0.14);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+  }
+  #viewer-canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    touch-action: none;
+  }
+  #topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 20px;
+    background: linear-gradient(to bottom, rgba(20,22,27,0.85), rgba(20,22,27,0));
+    pointer-events: none;
+  }
+  #topbar h1 {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: var(--ink);
+    pointer-events: auto;
+  }
+  #controls { display: flex; gap: 8px; }
+  #controls button {
+    pointer-events: auto;
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  #controls button:hover { border-color: var(--accent); background: rgba(111, 184, 176, 0.1); }
+  #controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #shellBtn.off { color: var(--ink-muted); }
+  #legend {
+    position: fixed;
+    left: 20px;
+    top: 56px;
+    width: 200px;
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px;
+    backdrop-filter: blur(6px);
+    scrollbar-width: thin;
+  }
+  .legend-heading {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding: 8px 7px 4px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 5px 7px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--ink-muted);
+    font-family: inherit;
+    font-size: 12.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .legend-item:hover { background: rgba(233, 230, 223, 0.07); color: var(--ink); }
+  .legend-item.selected { background: rgba(111, 184, 176, 0.14); color: var(--ink); font-weight: 600; }
+  .legend-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .swatch {
+    flex: none;
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+  }
+  #infoPanel {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    max-width: min(430px, calc(100vw - 40px));
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    backdrop-filter: blur(6px);
+  }
+  #labelText { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-muted); }
+  #labelText.active { color: var(--ink); font-weight: 600; font-size: 15px; }
+  #labelRow { display: flex; align-items: center; gap: 10px; }
+  #infoBtn {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  #infoBtn.hidden { display: none; }
+  #infoBtn:hover, #infoBtn.open { background: var(--accent); color: var(--bg); }
+  #infoBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #descriptionText {
+    margin: 10px 0 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  #descriptionText.hidden { display: none; }
+  #attribution {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    max-width: 250px;
+    font-size: 11px;
+    color: var(--ink-muted);
+    text-align: right;
+    line-height: 1.4;
+  }
+  #attribution a { color: var(--ink-muted); }
+  #loadingOverlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    color: var(--ink-muted);
+    font-size: 14px;
+    text-align: center;
+    z-index: 10;
+    transition: opacity 0.4s ease;
+  }
+  #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+  /* On narrow screens the legend becomes a wrapping strip under the title. */
+  @media (max-width: 700px) {
+    #legend {
+      right: 20px;
+      width: auto;
+      max-height: 32vh;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+    }
+    .legend-heading { display: none; }
+    .legend-item { width: auto; font-size: 12px; }
+    #infoPanel { max-width: calc(100vw - 40px); }
+    #attribution { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #loadingOverlay { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="viewer-canvas"></canvas>
+
+<div id="topbar">
+  <h1>Limbic system</h1>
+  <div id="controls">
+    <button id="shellBtn" type="button" aria-pressed="true">Hide cortex</button>
+    <button id="resetBtn" type="button">Reset view</button>
+  </div>
+</div>
+
+<div id="legend"></div>
+
+<div id="infoPanel">
+  <div id="labelRow">
+    <p id="labelText">Drag to rotate · scroll to zoom · right-click drag to pan · click a structure to see its name</p>
+    <button id="infoBtn" type="button" class="hidden" aria-label="More information about this structure" title="More information">i</button>
+  </div>
+  <p id="descriptionText" class="hidden"></p>
+</div>
+
+<div id="attribution">Model: <a href="https://sketchfab.com/3d-models/limbic-system-ap-psychology-042b7c37263f4309bc8b4e18dc989102">Limbic System – AP Psychology</a> by shojig<br>Licensed CC BY 4.0 · decimated to 5% of its original triangles for the web</div>
+
+<div id="loadingOverlay"><p id="loadingText">Loading model…</p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const MODEL_URL = "brain/limbic-system-reduced.glb";
+
+  // ---------------------------------------------------------------------
+  // Structures.
+  //
+  // The model's anatomy labels live on the node names, in the form
+  // "..._preprocess_Export_17_Left_hippocampus_obj", not on the meshes,
+  // which are only "mesh0", "mesh1"... The names are also unreliable about
+  // sides — "Left_globus_pallidus" is in fact the right one, and the
+  // thalamus pair is "Right_thalamus" and "Right_thalamus2" — so a raw
+  // label is treated purely as a structure identifier and never as a side.
+  // Left and right are one entry here in any case.
+  //
+  // Two meshes carry no anatomical name at all ("PM3D_Sphereinder3D1/2").
+  // They are the cranial nerves: thin paired filaments radiating from the
+  // brainstem, in the same gold material as the optic chiasm.
+  // ---------------------------------------------------------------------
+  const LABEL_TO_KEY = {
+    "Amygdala": "Amygdala",
+    "Anterior_commissure": "Anterior commissure",
+    "Brain_stem": "Brainstem",
+    "Caudate_nucleus": "Caudate nucleus",
+    "Fornix_right": "Fornix",
+    "Hypothalamus_and_pituitary": "Hypothalamus and pituitary",
+    "Left_cerebellar_hemisphere": "Cerebellum",
+    "Right_cerebellar_hemisphere": "Cerebellum",
+    "Left_globus_pallidus": "Globus pallidus",
+    "Left_hemisphere_transparent": "Cerebral hemispheres",
+    "Right_Hemisphere_transparent": "Cerebral hemispheres",
+    "Left_hippocampus": "Hippocampus",
+    "Left_putamen": "Putamen",
+    "Mammillary_bodies": "Mammillary bodies",
+    "Midbrain": "Midbrain",
+    "Optic_chiasm": "Optic chiasm",
+    "PM3D_Sphereinder3D": "Cranial nerves",
+    "Pineal_gland": "Pineal gland",
+    "Pons": "Pons",
+    "Right_choiroid_plexus": "Choroid plexus",
+    "Right_thalamus": "Thalamus",
+    "Stria_Medullaris": "Stria medullaris",
+    "Stria_terminalis": "Stria terminalis",
+    "Superior_colliculus": "Superior colliculus",
+    "Ventricular_system": "Ventricular system"
+  };
+  // Longest prefix first, so "Right_thalamus2_1" cannot match a shorter key.
+  const LABEL_PREFIXES = Object.keys(LABEL_TO_KEY).sort(function (a, b) { return b.length - a.length; });
+
+  const STRUCTURES = [
+    { key: "Hippocampus", group: "limbic", description: "The hippocampus is a curved ridge of cortex folded into the floor of each temporal lobe. It is where new episodic memories are consolidated before being distributed to the cortex, and it builds the brain's spatial map. Damage to both sides leaves someone unable to form new lasting memories while older ones survive." },
+    { key: "Amygdala", group: "limbic", description: "The amygdala is an almond-shaped cluster of nuclei sitting just in front of the hippocampus. It attaches emotional weight to experience — fear and threat detection above all — and it is fast, reacting to danger before the cortex has finished identifying what it is looking at." },
+    { key: "Fornix", group: "limbic", description: "The fornix is the great arching output tract of the hippocampus. Its fibres sweep back, up and over the thalamus, then curve down to the mammillary bodies, carrying memory-related signals out of the hippocampus into the rest of the limbic circuit." },
+    { key: "Mammillary bodies", group: "limbic", description: "The mammillary bodies are a pair of small round swellings on the underside of the hypothalamus. They are the relay where the fornix ends, passing hippocampal signals on to the anterior thalamus. They shrink in Wernicke–Korsakoff syndrome, which is why that condition wrecks memory." },
+    { key: "Hypothalamus and pituitary", group: "limbic", description: "The hypothalamus is a small region below the thalamus that keeps the body's internal state in balance — temperature, hunger, thirst, sleep, and the stress and sex hormone axes. It controls the pituitary gland hanging beneath it, which in turn directs the thyroid, adrenals and gonads." },
+    { key: "Thalamus", group: "limbic", description: "The thalamus is the paired egg-shaped relay at the centre of the brain, shown here with the bridge of tissue that joins the two halves across the midline. Almost every sensory pathway except smell synapses here before reaching the cortex, and it gates what reaches conscious awareness." },
+    { key: "Anterior commissure", group: "limbic", description: "The anterior commissure is a small bundle of fibres crossing the midline in front of the fornix. It connects the temporal lobes of the two hemispheres, including the amygdalae — an older and much smaller crossing than the corpus callosum above it." },
+    { key: "Stria terminalis", group: "limbic", description: "The stria terminalis is a slender fibre bundle that follows the curve of the caudate nucleus, carrying signals from the amygdala to the hypothalamus and septal region. Its bed nucleus is heavily involved in sustained anxiety, as distinct from acute fear." },
+    { key: "Stria medullaris", group: "limbic", description: "The stria medullaris is a thin tract running along the upper surface of the thalamus, gathering fibres from the septal and limbic forebrain and delivering them to the habenula. Through it, limbic activity reaches the brainstem systems that release dopamine and serotonin." },
+
+    { key: "Caudate nucleus", group: "basal", description: "The caudate nucleus is a long C-shaped mass of grey matter that arcs alongside the lateral ventricle. With the putamen it forms the striatum, the input stage of the basal ganglia, and it is central to habit learning, goal-directed action and the selection of movements." },
+    { key: "Putamen", group: "basal", description: "The putamen lies just outside the globus pallidus, on the lateral side of the basal ganglia. It handles the motor side of the striatum's work — learning and running automatic movement sequences — and it is one of the regions most affected in Parkinson's and Huntington's disease." },
+    { key: "Globus pallidus", group: "basal", description: "The globus pallidus is the pale inner segment of the basal ganglia and their main output stage. It holds movement in check by tonically inhibiting the thalamus; releasing that brake is how an intended movement is allowed through. It is a standard target for deep brain stimulation." },
+
+    { key: "Midbrain", group: "stem", description: "The midbrain is the topmost part of the brainstem, connecting the forebrain to the pons below. It carries the cerebral peduncles, houses the reflex centres for eye and head movement, and contains the substantia nigra, whose dopamine neurons die away in Parkinson's disease." },
+    { key: "Superior colliculus", group: "stem", description: "The superior colliculi are the upper pair of bumps on the back of the midbrain. They build a map of visual space and drive the reflex that snaps the eyes and head towards something that appears or moves in the periphery, well before you consciously identify it." },
+    { key: "Pons", group: "stem", description: "The pons is the bulging middle section of the brainstem. It is a bridge in both directions — carrying fibres between the cerebrum and the cerebellum, and relaying signals down to the medulla — and it holds the nuclei that generate REM sleep and help drive breathing rhythm." },
+    { key: "Brainstem", group: "stem", description: "The brainstem is the stalk that joins the brain to the spinal cord. Every signal passing between brain and body travels through it, and its nuclei run the functions that keep you alive without your attention: breathing, heart rate, blood pressure, swallowing and level of arousal." },
+    { key: "Cerebellum", group: "stem", description: "The cerebellum sits beneath the back of the cerebral hemispheres. It holds more than half the brain's neurons in a tenth of its volume. It does not start movements but refines them, comparing what was intended against what happened to keep motion smooth, accurate and well timed." },
+    { key: "Cranial nerves", group: "stem", description: "The cranial nerves emerge directly from the brain rather than the spinal cord — twelve pairs carrying smell, sight, hearing, balance, taste and facial sensation inward, and control of the eyes, face, tongue and viscera outward. Most of them arise along the brainstem, as shown here." },
+    { key: "Optic chiasm", group: "stem", description: "The optic chiasm is the X-shaped crossing beneath the hypothalamus where the two optic nerves meet. Fibres from the inner half of each retina cross to the opposite side, so that everything in the left visual field is handled by the right hemisphere, and vice versa." },
+    { key: "Pineal gland", group: "stem", description: "The pineal gland is a tiny cone at the back of the third ventricle, between the two thalami. It reads the body clock's signal about light and darkness and secretes melatonin at night, setting the timing of sleep and seasonal rhythms." },
+
+    { key: "Ventricular system", group: "ventricles", description: "The ventricles are four connected cavities filled with cerebrospinal fluid: a lateral ventricle curving through each hemisphere, the third between the thalami, and the fourth in front of the cerebellum. The fluid cushions the brain, carries away waste and keeps its chemistry stable." },
+    { key: "Choroid plexus", group: "ventricles", description: "The choroid plexus is the fringed, highly vascular tissue lining parts of each ventricle. It manufactures cerebrospinal fluid — roughly half a litre a day, replacing the whole volume several times over — and forms the blood–cerebrospinal fluid barrier." },
+
+    { key: "Cerebral hemispheres", group: "cortex", description: "The cerebral hemispheres are drawn transparent here so the structures buried inside them stay visible. The limbic structures sit deep in the brain, wrapped around the thalamus and the top of the brainstem, with the cortex forming a shell over them." }
+  ];
+
+  const GROUP_HEADINGS = {
+    limbic: "Limbic circuit",
+    basal: "Basal ganglia",
+    stem: "Brainstem and cerebellum",
+    ventricles: "Ventricles",
+    cortex: "Surrounding"
+  };
+
+  // The transparent cortical shell would otherwise swallow every click.
+  const NOT_PICKABLE = { "Cerebral hemispheres": true };
+
+  function structureKeyFor(object) {
+    // Walk up to the node whose name carries the exported anatomy label.
+    for (let node = object; node; node = node.parent) {
+      const name = node.name || "";
+      const match = /preprocess_Export_17_(.+?)_obj$/.exec(name);
+      if (!match) continue;
+      const label = match[1];
+      for (let i = 0; i < LABEL_PREFIXES.length; i++) {
+        if (label.indexOf(LABEL_PREFIXES[i]) === 0) return LABEL_TO_KEY[LABEL_PREFIXES[i]];
+      }
+      return null;
+    }
+    return null;
+  }
+
+  // ---------------------------------------------------------------------
+  // Minimal orbit / pan / zoom controls (mouse, touch, and trackpad),
+  // written by hand so this page has no dependency beyond three.js.
+  // ---------------------------------------------------------------------
+  function OrbitLikeControls(camera, domElement) {
+    this.camera = camera;
+    this.domElement = domElement;
+    this.target = new THREE.Vector3();
+    this.minDistance = 0.01;
+    this.maxDistance = 1000;
+    this.minPolarAngle = 0.08;
+    this.maxPolarAngle = Math.PI - 0.08;
+
+    this._pointers = new Map();
+    this._isDragging = false;
+    this._dragButton = 0;
+    this._lastX = 0;
+    this._lastY = 0;
+    this._startX = 0;
+    this._startY = 0;
+    this._moved = false;
+    this._prevPinchDist = null;
+    this.changed = false;
+
+    const self = this;
+    domElement.addEventListener("pointerdown", function (e) { self._onPointerDown(e); });
+    domElement.addEventListener("pointermove", function (e) { self._onPointerMove(e); });
+    window.addEventListener("pointerup", function (e) { self._onPointerUp(e); });
+    window.addEventListener("pointercancel", function (e) { self._onPointerUp(e); });
+    domElement.addEventListener("wheel", function (e) { self._onWheel(e); }, { passive: false });
+    domElement.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  }
+
+  OrbitLikeControls.prototype._pinchDistance = function () {
+    const pts = Array.from(this._pointers.values());
+    const dx = pts[0].x - pts[1].x;
+    const dy = pts[0].y - pts[1].y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  OrbitLikeControls.prototype._onPointerDown = function (e) {
+    this.domElement.setPointerCapture(e.pointerId);
+    this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this._pointers.size === 1) {
+      this._isDragging = true;
+      this._dragButton = e.button;
+      this._lastX = e.clientX;
+      this._lastY = e.clientY;
+      this._startX = e.clientX;
+      this._startY = e.clientY;
+      this._moved = false;
+    } else if (this._pointers.size === 2) {
+      this._isDragging = false;
+      this._prevPinchDist = this._pinchDistance();
+    }
+  };
+
+  OrbitLikeControls.prototype._onPointerMove = function (e) {
+    if (!this._pointers.has(e.pointerId)) return;
+    this._pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (this._pointers.size >= 2) {
+      const dist = this._pinchDistance();
+      if (this._prevPinchDist != null) this._zoomByDelta(this._prevPinchDist - dist);
+      this._prevPinchDist = dist;
+      return;
+    }
+
+    if (this._isDragging) {
+      const dx = e.clientX - this._lastX;
+      const dy = e.clientY - this._lastY;
+      this._lastX = e.clientX;
+      this._lastY = e.clientY;
+      if (Math.abs(e.clientX - this._startX) > 3 || Math.abs(e.clientY - this._startY) > 3) {
+        this._moved = true;
+      }
+      const isPan = this._dragButton === 2 || e.shiftKey;
+      if (isPan) this._pan(dx, dy); else this._rotate(dx, dy);
+    }
+  };
+
+  OrbitLikeControls.prototype._onPointerUp = function (e) {
+    this._pointers.delete(e.pointerId);
+    if (this._pointers.size < 1) this._isDragging = false;
+    if (this._pointers.size < 2) this._prevPinchDist = null;
+  };
+
+  OrbitLikeControls.prototype._rotate = function (dx, dy) {
+    this.changed = true;
+    const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
+    const spherical = new THREE.Spherical().setFromVector3(offset);
+    spherical.theta -= dx * 0.006;
+    spherical.phi -= dy * 0.006;
+    spherical.phi = Math.max(this.minPolarAngle, Math.min(this.maxPolarAngle, spherical.phi));
+    spherical.makeSafe();
+    offset.setFromSpherical(spherical);
+    this.camera.position.copy(this.target).add(offset);
+    this.camera.lookAt(this.target);
+  };
+
+  OrbitLikeControls.prototype._pan = function (dx, dy) {
+    this.changed = true;
+    const distance = this.camera.position.distanceTo(this.target);
+    const panScale = distance * 0.0016;
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.camera.quaternion).multiplyScalar(-dx * panScale);
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(this.camera.quaternion).multiplyScalar(dy * panScale);
+    this.camera.position.add(right).add(up);
+    this.target.add(right).add(up);
+    this.camera.lookAt(this.target);
+  };
+
+  OrbitLikeControls.prototype._zoomByDelta = function (delta) {
+    this.changed = true;
+    const offset = new THREE.Vector3().copy(this.camera.position).sub(this.target);
+    let distance = offset.length();
+    distance *= Math.pow(0.995, -delta);
+    distance = Math.max(this.minDistance, Math.min(this.maxDistance, distance));
+    offset.setLength(distance);
+    this.camera.position.copy(this.target).add(offset);
+    this.camera.lookAt(this.target);
+  };
+
+  OrbitLikeControls.prototype._onWheel = function (e) {
+    e.preventDefault();
+    this._zoomByDelta(-e.deltaY * 0.4);
+  };
+
+  OrbitLikeControls.prototype.wasDragged = function () { return this._moved; };
+
+  // ---------------------------------------------------------------------
+  // Scene setup
+  // ---------------------------------------------------------------------
+  const canvas = document.getElementById("viewer-canvas");
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x14161b);
+
+  const camera = new THREE.PerspectiveCamera(45, safeAspect(), 0.001, 100);
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+
+  // The viewport can briefly report zero width while the page is laying out.
+  // An aspect of 0/0 is NaN, which puts the camera at NaN and renders nothing.
+  function safeAspect() {
+    const w = window.innerWidth, h = window.innerHeight;
+    return (w > 0 && h > 0) ? w / h : 16 / 9;
+  }
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x362a22, 0.9));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+  const key = new THREE.DirectionalLight(0xffffff, 0.9);
+  key.position.set(1, 1.4, 1.2);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+  fill.position.set(-1.3, 0.3, -0.9);
+  scene.add(fill);
+
+  const controls = new OrbitLikeControls(camera, renderer.domElement);
+  const raycaster = new THREE.Raycaster();
+  const mouseNDC = new THREE.Vector2();
+
+  const labelEl = document.getElementById("labelText");
+  const infoBtn = document.getElementById("infoBtn");
+  const descriptionEl = document.getElementById("descriptionText");
+  const legendEl = document.getElementById("legend");
+  const shellBtn = document.getElementById("shellBtn");
+  const defaultHint = labelEl.textContent;
+  const highlightColor = new THREE.Color(0x6fb8b0);
+
+  const byKey = new Map();      // structure key -> meshes (both sides)
+  const rowByKey = new Map();   // structure key -> legend button
+  const infoByKey = new Map();  // structure key -> STRUCTURES entry
+  STRUCTURES.forEach(function (s) { infoByKey.set(s.key, s); });
+  let pickable = [];
+  let modelRoot = null;
+  let selectedKey = null;
+
+  function closeDescription() {
+    descriptionEl.classList.add("hidden");
+    descriptionEl.textContent = "";
+    infoBtn.classList.remove("open");
+  }
+
+  // This model nests 23 structures inside one another, so a highlight alone
+  // is usually hidden behind something. Selecting one fades the rest back to
+  // a ghost so the reader can actually see what they picked.
+  const GHOST_OPACITY = 0.09;
+
+  function setGhosting(focusKey) {
+    modelRoot.traverse(function (object) {
+      if (!object.isMesh) return;
+      const material = object.material;
+      const focused = !focusKey || object.userData.structureKey === focusKey;
+      if (focused) {
+        material.opacity = object.userData.baseOpacity;
+        material.transparent = object.userData.baseTransparent;
+        material.depthWrite = object.userData.baseDepthWrite;
+      } else {
+        material.opacity = Math.min(object.userData.baseOpacity, GHOST_OPACITY);
+        material.transparent = true;
+        material.depthWrite = false;
+      }
+      material.needsUpdate = true;
+    });
+  }
+
+  function setEmissive(structureKey, on) {
+    const meshes = byKey.get(structureKey);
+    if (!meshes) return;
+    meshes.forEach(function (mesh) {
+      if (on) {
+        // Kept gentle: the ghosting already makes the selection obvious, and a
+        // strong emissive would wash a structure out of its own colour, which
+        // is what the legend swatch matches it against.
+        mesh.material.emissive.copy(highlightColor);
+        mesh.material.emissiveIntensity = 0.22;
+      } else {
+        mesh.material.emissive.setHex(0x000000);
+        mesh.material.emissiveIntensity = 1;
+      }
+    });
+  }
+
+  // Left and right light up together: the legend and the descriptions treat
+  // a paired structure as one entry.
+  function selectStructure(structureKey) {
+    if (!byKey.has(structureKey) || selectedKey === structureKey) return;
+    if (selectedKey) {
+      setEmissive(selectedKey, false);
+      const prev = rowByKey.get(selectedKey);
+      if (prev) prev.classList.remove("selected");
+    }
+    selectedKey = structureKey;
+    setEmissive(structureKey, true);
+    const row = rowByKey.get(structureKey);
+    if (row) row.classList.add("selected");
+    setGhosting(structureKey);
+    labelEl.textContent = structureKey;
+    labelEl.classList.add("active");
+    closeDescription();
+    infoBtn.classList.toggle("hidden", !infoByKey.has(structureKey));
+  }
+
+  function deselect() {
+    if (selectedKey) {
+      setEmissive(selectedKey, false);
+      const row = rowByKey.get(selectedKey);
+      if (row) row.classList.remove("selected");
+    }
+    selectedKey = null;
+    setGhosting(null);
+    labelEl.textContent = defaultHint;
+    labelEl.classList.remove("active");
+    infoBtn.classList.add("hidden");
+    closeDescription();
+  }
+
+  infoBtn.addEventListener("click", function () {
+    if (!selectedKey) return;
+    if (!descriptionEl.classList.contains("hidden")) {
+      closeDescription();
+      return;
+    }
+    const entry = infoByKey.get(selectedKey);
+    descriptionEl.textContent = entry ? entry.description : "";
+    descriptionEl.classList.remove("hidden");
+    infoBtn.classList.add("open");
+  });
+
+  // Swatch colours are read off the loaded meshes, so the legend cannot
+  // drift out of step with what is on screen.
+  function swatchColor(mesh) {
+    const material = mesh.material;
+    const color = material.color ? material.color.clone() : new THREE.Color(0xb0a0a0);
+    if (material.map && material.map.image) {
+      // Textured structures are near enough a flat colour; average the
+      // opaque part of the atlas so the swatch matches the model.
+      try {
+        const img = material.map.image;
+        const size = 32;
+        const c = document.createElement("canvas");
+        c.width = c.height = size;
+        const ctx = c.getContext("2d");
+        ctx.drawImage(img, 0, 0, size, size);
+        const data = ctx.getImageData(0, 0, size, size).data;
+        let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i] + data[i + 1] + data[i + 2] < 30) continue; // skip the empty atlas background
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+        }
+        if (n > 0) color.multiply(new THREE.Color(r / n / 255, g / n / 255, b / n / 255).convertSRGBToLinear());
+      } catch (e) {
+        /* canvas is tainted or the image is not ready; the base colour will do */
+      }
+    }
+    return "#" + color.convertLinearToSRGB().getHexString();
+  }
+
+  function buildLegend() {
+    let lastGroup = null;
+    STRUCTURES.forEach(function (s) {
+      const meshes = byKey.get(s.key);
+      if (!meshes || meshes.length === 0) return;
+      if (s.group !== lastGroup) {
+        const heading = document.createElement("div");
+        heading.className = "legend-heading";
+        heading.textContent = GROUP_HEADINGS[s.group] || "";
+        legendEl.appendChild(heading);
+        lastGroup = s.group;
+      }
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "legend-item";
+      const swatch = document.createElement("span");
+      swatch.className = "swatch";
+      swatch.style.background = swatchColor(meshes[0]);
+      row.appendChild(swatch);
+      row.appendChild(document.createTextNode(s.key));
+      row.addEventListener("click", function () {
+        if (selectedKey === s.key) deselect(); else selectStructure(s.key);
+      });
+      legendEl.appendChild(row);
+      rowByKey.set(s.key, row);
+    });
+  }
+
+  // A lateral view, tipped slightly forward, shows the limbic ring end-on.
+  const DEFAULT_VIEW_THETA = Math.PI * 0.42;
+  const DEFAULT_VIEW_PHI = Math.PI * 0.45;
+  const WORLD_UP = new THREE.Vector3(0, 1, 0);
+
+  // Box3.setFromObject ignores visibility, so hiding the cortex would
+  // otherwise leave the camera still framing a shell that is no longer there.
+  function visibleBox() {
+    const box = new THREE.Box3();
+    const meshBox = new THREE.Box3();
+    modelRoot.traverse(function (object) {
+      if (!object.isMesh || !object.visible) return;
+      for (let p = object.parent; p; p = p.parent) {
+        if (!p.visible) return;
+      }
+      if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+      meshBox.copy(object.geometry.boundingBox).applyMatrix4(object.matrixWorld);
+      box.union(meshBox);
+    });
+    return box.isEmpty() ? new THREE.Box3().setFromObject(modelRoot) : box;
+  }
+
+  function frameCamera() {
+    if (!modelRoot) return;
+    modelRoot.updateWorldMatrix(true, true);
+    const box = visibleBox();
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+    const maxDim = Math.max(size.x, size.y, size.z) || 0.1;
+
+    // Measure the model along the camera's own axes and back off far enough
+    // to fit it both ways: on a tall phone screen the limiting axis is the
+    // horizontal one, and fitting the vertical field of view alone crops it.
+    const dir = new THREE.Vector3().setFromSpherical(
+      new THREE.Spherical(1, DEFAULT_VIEW_PHI, DEFAULT_VIEW_THETA)
+    );
+    const right = new THREE.Vector3().crossVectors(dir, WORLD_UP).normalize();
+    const up = new THREE.Vector3().crossVectors(right, dir).normalize();
+    const half = size.clone().multiplyScalar(0.5);
+    function extentAlong(axis) {
+      return Math.abs(axis.x) * half.x + Math.abs(axis.y) * half.y + Math.abs(axis.z) * half.z;
+    }
+    const aspect = (camera.aspect > 0 && isFinite(camera.aspect)) ? camera.aspect : safeAspect();
+    const halfFovY = THREE.MathUtils.degToRad(camera.fov) / 2;
+    const halfFovX = Math.atan(Math.tan(halfFovY) * aspect);
+    const distance = Math.max(
+      extentAlong(up) / Math.tan(halfFovY),
+      extentAlong(right) / Math.tan(halfFovX)
+    ) * 1.1 + extentAlong(dir);
+
+    controls.target.copy(center);
+    camera.position.copy(center).add(dir.multiplyScalar(distance));
+    camera.lookAt(center);
+    camera.near = Math.max(maxDim / 500, 0.0005);
+    camera.far = distance * 50;
+    camera.updateProjectionMatrix();
+
+    controls.minDistance = maxDim * 0.05;
+    controls.maxDistance = maxDim * 6;
+  }
+
+  function onResize() {
+    camera.aspect = safeAspect();
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Re-fit while the view is still the one we chose, so rotating a phone or
+    // dragging a window edge never leaves the model half off-screen. Once the
+    // reader has moved the camera themselves, leave it alone.
+    if (!controls.changed) frameCamera();
+  }
+  window.addEventListener("resize", onResize);
+
+  renderer.domElement.addEventListener("pointerup", function (e) {
+    if (controls.wasDragged()) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouseNDC, camera);
+    const hits = raycaster.intersectObjects(pickable, false);
+    for (let i = 0; i < hits.length; i++) {
+      if (!hits[i].object.visible) continue;
+      const structureKey = hits[i].object.userData.structureKey;
+      if (structureKey) { selectStructure(structureKey); return; }
+    }
+    deselect();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    deselect();
+    controls.changed = false;
+    frameCamera();
+  });
+
+  let shellVisible = true;
+  shellBtn.addEventListener("click", function () {
+    shellVisible = !shellVisible;
+    const meshes = byKey.get("Cerebral hemispheres") || [];
+    meshes.forEach(function (m) { m.visible = shellVisible; });
+    shellBtn.textContent = shellVisible ? "Hide cortex" : "Show cortex";
+    shellBtn.setAttribute("aria-pressed", String(shellVisible));
+    shellBtn.classList.toggle("off", !shellVisible);
+    // Dropping the shell leaves the limbic structures filling a fraction of
+    // the frame, so close in on them — unless the reader has taken the
+    // camera somewhere themselves.
+    if (!controls.changed) frameCamera();
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+
+  // ---------------------------------------------------------------------
+  // Load and go
+  // ---------------------------------------------------------------------
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const loadingText = document.getElementById("loadingText");
+
+  new THREE.GLTFLoader().load(
+    MODEL_URL,
+    function (gltf) {
+      modelRoot = gltf.scene;
+
+      modelRoot.traverse(function (object) {
+        if (!object.isMesh) return;
+        const structureKey = structureKeyFor(object);
+        // Materials are shared between meshes in the export, so each mesh
+        // needs its own copy before anything can be highlighted separately.
+        object.material = object.material.clone();
+        object.userData.structureKey = structureKey;
+        object.userData.baseOpacity = object.material.opacity;
+        object.userData.baseTransparent = object.material.transparent;
+        object.userData.baseDepthWrite = object.material.depthWrite;
+        if (!structureKey) return;
+        if (!byKey.has(structureKey)) byKey.set(structureKey, []);
+        byKey.get(structureKey).push(object);
+        if (!NOT_PICKABLE[structureKey]) pickable.push(object);
+      });
+
+      scene.add(modelRoot);
+      buildLegend();
+      frameCamera();
+      animate();
+      loadingOverlay.classList.add("hidden");
+    },
+    function (event) {
+      if (event.lengthComputable && event.total > 0) {
+        loadingText.textContent = "Loading model… " + Math.round((event.loaded / event.total) * 100) + "%";
+      } else {
+        loadingText.textContent = "Loading model… " + (event.loaded / 1e6).toFixed(1) + " MB";
+      }
+    },
+    function (err) {
+      loadingText.innerHTML =
+        "Could not load the model.<br><span style=\"font-size:12px\">" +
+        "This page loads <code>" + MODEL_URL + "</code> over the network, so it needs to be served " +
+        "by a web server — opening the file directly from disk will not work.</span>";
+      console.error(err);
+    }
+  );
+})();
+</script>
+</body>
+</html>
