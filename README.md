@@ -10,8 +10,8 @@ Interactive 3D anatomy viewers that run entirely in the browser.
 | --- | --- |
 | `Male Reproductive System Viewer.html` | Self-contained three.js viewer — the glTF model is embedded as base64, so the page needs no other local files. Click a structure to see its name and description. |
 | `Brain Neocortex Viewer.html` | Self-contained three.js viewer of the cerebral cortex, split into its four lobes plus the insula, with the cerebellum, brainstem, corpus callosum and pituitary gland alongside. Click a structure or pick one from the legend. |
-| `Brain Limbic System Viewer.html` | The limbic system: 23 named structures inside a transparent cortical shell. Click one, or pick it from the legend, and everything else fades to a ghost. Loads `brain/limbic-system-reduced.glb` at runtime, so it needs a web server. |
-| `Brain Limbic System Simplified Viewer.html` | The same model and the same loader, narrowed to seven structures: hippocampus, amygdala, hypothalamus and pituitary, thalamus, pons, brainstem, cerebellum. The rest of the brain is still drawn but is not listed or clickable. Selecting a structure leaves the brain whole; an eye toggle beside the (i) fades everything else away, and the setting is sticky across selections. |
+| `Brain Limbic System Viewer.html` | The limbic system: 23 named structures inside a transparent cortical shell. Click one, or pick it from the legend, and everything else fades to a ghost. Toggles drop the cortex and cut the brain to a hemisection. Loads `brain/limbic-system-reduced.glb` at runtime, so it needs a web server. |
+| `Brain Limbic System Simplified Viewer.html` | The same model and the same loader, narrowed to seven structures: hippocampus, amygdala, hypothalamus and pituitary, thalamus, pons, brainstem, cerebellum. Everything else is still drawn, but held back as translucent context and not clickable. Selecting a structure leaves the brain whole; an eye toggle beside the (i) fades everything else away, and the setting is sticky across selections. |
 | `Female Reproductive System Viewer.html` | Female reproductive and urinary anatomy. The source model carries no per-organ names, so parts are separated into connected components and each was identified by hand. Self-contained: the model is embedded as base64. |
 | `index.html` | Landing page linking to the viewers. |
 
@@ -34,6 +34,15 @@ The lobe boundaries are only as good as the colours the model's author painted: 
 inferior surface of the brain is not painted per-lobe in the source, so the orbital
 surface of the frontal lobe reads as temporal there. The viewer says as much in its
 attribution line.
+
+## The hemisection view
+
+Both limbic viewers can hide the left half of the brain, which gives the midsagittal view
+the structures are usually taught from. It works because this model is built as mirrored
+pairs: every one of its 54 meshes sits wholly on one side of the midline, so the cut is
+just a matter of hiding each mesh whose centre falls on the `+x` side. The midline is
+measured from the model's own bounding box rather than hard-coded, and `+x` is the
+subject's left, so what remains is the right half seen from its cut face.
 
 ## Reducing the limbic system model
 

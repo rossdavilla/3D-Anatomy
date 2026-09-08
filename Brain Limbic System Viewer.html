@@ -68,7 +68,7 @@
   }
   #controls button:hover { border-color: var(--accent); background: rgba(111, 184, 176, 0.1); }
   #controls button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  #shellBtn.off { color: var(--ink-muted); }
+  #controls button.off { color: var(--ink-muted); }
   #legend {
     position: fixed;
     left: 20px;
@@ -189,7 +189,12 @@
   #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
   /* On narrow screens the legend becomes a wrapping strip under the title. */
   @media (max-width: 700px) {
+    #topbar { flex-wrap: wrap; row-gap: 8px; }
+    #topbar h1 { width: 100%; }
+    #controls { flex-wrap: wrap; }
+    #controls button { padding: 6px 10px; font-size: 12px; }
     #legend {
+      top: 104px;
       right: 20px;
       width: auto;
       max-height: 32vh;
@@ -215,6 +220,7 @@
   <h1>Limbic system</h1>
   <div id="controls">
     <button id="shellBtn" type="button" aria-pressed="true">Hide cortex</button>
+    <button id="halfBtn" type="button" aria-pressed="true">Hide left half</button>
     <button id="resetBtn" type="button">Reset view</button>
   </div>
 </div>
@@ -509,6 +515,7 @@
   const descriptionEl = document.getElementById("descriptionText");
   const legendEl = document.getElementById("legend");
   const shellBtn = document.getElementById("shellBtn");
+  const halfBtn = document.getElementById("halfBtn");
   const defaultHint = labelEl.textContent;
   const highlightColor = new THREE.Color(0x6fb8b0);
 
@@ -765,13 +772,35 @@
   });
 
   let shellVisible = true;
+  let bothHalves = true;
+
+  // Two independent toggles decide visibility, so they have to be resolved
+  // together — flipping one must not undo the other.
+  function applyVisibility() {
+    modelRoot.traverse(function (object) {
+      if (!object.isMesh) return;
+      const isCortex = object.userData.structureKey === "Cerebral hemispheres";
+      object.visible = (shellVisible || !isCortex) && (bothHalves || !object.userData.isLeft);
+    });
+  }
+
+  function setToggle(button, on, onLabel, offLabel) {
+    button.textContent = on ? onLabel : offLabel;
+    button.setAttribute("aria-pressed", String(on));
+    button.classList.toggle("off", !on);
+  }
+
+  halfBtn.addEventListener("click", function () {
+    bothHalves = !bothHalves;
+    applyVisibility();
+    setToggle(halfBtn, bothHalves, "Hide left half", "Show left half");
+    if (!controls.changed) frameCamera();
+  });
+
   shellBtn.addEventListener("click", function () {
     shellVisible = !shellVisible;
-    const meshes = byKey.get("Cerebral hemispheres") || [];
-    meshes.forEach(function (m) { m.visible = shellVisible; });
-    shellBtn.textContent = shellVisible ? "Hide cortex" : "Show cortex";
-    shellBtn.setAttribute("aria-pressed", String(shellVisible));
-    shellBtn.classList.toggle("off", !shellVisible);
+    applyVisibility();
+    setToggle(shellBtn, shellVisible, "Hide cortex", "Show cortex");
     // Dropping the shell leaves the limbic structures filling a fraction of
     // the frame, so close in on them — unless the reader has taken the
     // camera somewhere themselves.
@@ -811,6 +840,23 @@
       });
 
       scene.add(modelRoot);
+
+      // Every structure here is a mirrored pair split at the midline, so a
+      // hemisection is just hiding each mesh whose centre falls on one side.
+      // The midline is measured from the model rather than hard-coded.
+      modelRoot.updateWorldMatrix(true, true);
+      const modelBox = new THREE.Box3().setFromObject(modelRoot);
+      const midlineX = (modelBox.min.x + modelBox.max.x) / 2;
+      const meshCentre = new THREE.Vector3();
+      modelRoot.traverse(function (object) {
+        if (!object.isMesh) return;
+        if (!object.geometry.boundingBox) object.geometry.computeBoundingBox();
+        object.geometry.boundingBox.getCenter(meshCentre);
+        object.localToWorld(meshCentre);
+        // +x is the subject's left in this export.
+        object.userData.isLeft = meshCentre.x > midlineX;
+      });
+
       buildLegend();
       frameCamera();
       animate();
