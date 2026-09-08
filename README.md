@@ -11,7 +11,7 @@ Interactive 3D anatomy viewers that run entirely in the browser.
 | `Male Reproductive System Viewer.html` | Self-contained three.js viewer — the glTF model is embedded as base64, so the page needs no other local files. Click a structure to see its name and description. |
 | `Brain Neocortex Viewer.html` | Self-contained three.js viewer of the cerebral cortex, split into its four lobes plus the insula, with the cerebellum, brainstem, corpus callosum and pituitary gland alongside. Click a structure or pick one from the legend. |
 | `Brain Limbic System Viewer.html` | The limbic system: 23 named structures inside a transparent cortical shell. Click one, or pick it from the legend, and everything else fades to a ghost. Loads `brain/limbic-system-reduced.glb` at runtime, so it needs a web server. |
-| `Vagina Cutaway Viewer.html` | Cutaway model embedded from Sketchfab via iframe. Requires an internet connection. |
+| `Female Internal Anatomy Viewer.html` | Female reproductive and urinary anatomy. The source model carries no per-organ names, so parts are separated into connected components and each was identified by hand. Self-contained: the model is embedded as base64. |
 | `index.html` | Landing page linking to the viewers. |
 
 ## Building the brain viewer
@@ -87,12 +87,11 @@ transparent materials — none of which the minimal reader handles.
 
 ## Running it
 
-Open the male reproductive system, neocortex or cutaway viewer in a modern browser, or visit
-the live site above. The limbic system viewer needs a server, as above.
+Open the male reproductive system, neocortex or female internal anatomy viewer in a modern
+browser, or visit the live site above. The limbic system viewer needs a server, as above.
 
-The viewers need an internet connection: the three.js viewers load
-[three.js](https://threejs.org/) r128 from a CDN, and the cutaway viewer embeds a
-remotely hosted model.
+The viewers need an internet connection: they all load
+[three.js](https://threejs.org/) r128 from a CDN.
 
 ## Credits
 
@@ -104,8 +103,10 @@ The brain model is *Brain Project* by
 [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) and hosted on
 [Sketchfab](https://sketchfab.com/3d-models/brain-project-24ec03412dd8432bb0d3e750a72608e0).
 
-The cutaway model is *Realistic Vagina Cutaway 3D Model* by
-[Leo_3D](https://sketchfab.com/leo_3dcg), hosted on Sketchfab.
+The female reproductive system model is *Realistic Vagina Cutaway 3D Model* by Leo3DCG,
+obtained via [Fab](https://www.fab.com/) (Epic Games) under the Fab Standard License. Unlike
+the other models here it is not Creative Commons, and the viewer embeds its geometry as
+base64 rather than linking to a hosted copy, so the asset ships with this repository.
 
 ## Notes
 
