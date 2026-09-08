@@ -11,7 +11,7 @@ Interactive 3D anatomy viewers that run entirely in the browser.
 | `Male Reproductive System Viewer.html` | Self-contained three.js viewer — the glTF model is embedded as base64, so the page needs no other local files. Click a structure to see its name and description. |
 | `Brain Neocortex Viewer.html` | Self-contained three.js viewer of the cerebral cortex, split into its four lobes plus the insula, with the cerebellum, brainstem, corpus callosum and pituitary gland alongside. Click a structure or pick one from the legend. |
 | `Brain Limbic System Viewer.html` | The limbic system: 23 named structures inside a transparent cortical shell. Click one, or pick it from the legend, and everything else fades to a ghost. Loads `brain/limbic-system-reduced.glb` at runtime, so it needs a web server. |
-| `Female Internal Anatomy Viewer.html` | Female reproductive and urinary anatomy. The source model carries no per-organ names, so parts are separated into connected components and each was identified by hand. Self-contained: the model is embedded as base64. |
+| `Female Reproductive System Viewer.html` | Female reproductive and urinary anatomy. The source model carries no per-organ names, so parts are separated into connected components and each was identified by hand. Self-contained: the model is embedded as base64. |
 | `index.html` | Landing page linking to the viewers. |
 
 ## Building the brain viewer
